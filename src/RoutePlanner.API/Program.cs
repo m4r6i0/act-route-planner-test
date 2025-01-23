@@ -1,21 +1,30 @@
+using Microsoft.EntityFrameworkCore;
 using RoutePlanner.API.Configurations;
+using RoutePlanner.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Carregar o caminho do arquivo de rotas
-var routesFilePath = builder.Configuration["RoutesDataFile"] ?? "routes.txt";
+// Configura o contexto do EF Core e outras dependências
+builder.Services.ConfigureDependencies();
 
-// Configurar dependências
-builder.Services.ConfigureDependencies(routesFilePath);
-
-// Configurar serviços padrão
+// Configuração padrão da API
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configurar Swagger
+// Adicione o Middleware Global para Tratamento de Exceções
+app.UseMiddleware<RoutePlanner.API.Middleware.ExceptionMiddleware>();
+
+// Inicializar o banco de dados automaticamente
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<RoutePlannerDbContext>();
+    dbContext.Database.Migrate();
+}
+
+// Configuração padrão do middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -25,5 +34,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
+
+// Tornar o Program acessível para os testes
+public partial class Program { }

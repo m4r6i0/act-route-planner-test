@@ -1,34 +1,57 @@
-using RoutePlanner.API.Models;
+using Microsoft.EntityFrameworkCore;
+using RoutePlanner.API.Data;
+using RoutePlanner.Domain.Entities;
+using RoutePlanner.Domain.Interfaces;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RoutePlanner.API.Repositories
 {
-    public class RouteRepository
+    public class RouteRepository : IRepository<TravelRoute>
     {
-        private readonly string _filePath;
+        private readonly RoutePlannerDbContext _context;
 
-        public RouteRepository(string filePath)
+        public RouteRepository(RoutePlannerDbContext context)
         {
-            _filePath = filePath;
+            _context = context;
         }
 
-        public void AddRoute(TravelRoute route)
+        /// <summary>
+        /// Adiciona uma nova rota ao banco de dados.
+        /// </summary>
+        /// <param name="entity">A rota a ser adicionada.</param>
+        public async Task AddAsync(TravelRoute entity)
         {
-            var routeLine = $"{route.Origin},{route.Destination},{route.Cost}";
-            File.AppendAllLines(_filePath, new[] { routeLine });
+            if (await _context.TravelRoutes.AnyAsync(r => r.Origin == entity.Origin && r.Destination == entity.Destination))
+            {
+                throw new InvalidOperationException("Route already exists.");
+            }
+
+            _context.TravelRoutes.Add(entity);
+            await _context.SaveChangesAsync();
         }
 
-        public List<TravelRoute> GetAllRoutes()
+        /// <summary>
+        /// Retorna todas as rotas armazenadas no banco de dados.
+        /// </summary>
+        /// <returns>Uma lista de rotas.</returns>
+        public async Task<List<TravelRoute>> GetAllAsync()
         {
-            if (!File.Exists(_filePath))
-                return new List<TravelRoute>();
-
-            return File.ReadAllLines(_filePath)
-                .Select(line =>
-                {
-                    var parts = line.Split(',');
-                    return new TravelRoute(parts[0], parts[1], int.Parse(parts[2]));
-                })
-                .ToList();
+            return await _context.TravelRoutes.ToListAsync();
         }
+
+        /// <summary>
+        /// Retorna uma rota específica com base na origem e no destino.
+        /// </summary>
+        /// <param name="origin">A origem da rota.</param>
+        /// <param name="destination">O destino da rota.</param>
+        /// <returns>A rota encontrada ou uma rota padrão, se não existir.</returns>
+        public async Task<TravelRoute> GetByOriginAndDestinationAsync(string origin, string destination)
+        {
+            return await _context.TravelRoutes
+                .FirstOrDefaultAsync(r => r.Origin == origin && r.Destination == destination)
+                ?? new TravelRoute(origin, destination, 0); // Retorna um objeto com valores padrão.
+        }
+
     }
 }

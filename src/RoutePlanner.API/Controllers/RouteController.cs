@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using RoutePlanner.API.Models;
+using RoutePlanner.API.Models.Requests;
+using RoutePlanner.API.Models.Responses;
+using RoutePlanner.Domain.Entities;
 using RoutePlanner.API.Services;
+using System.Threading.Tasks;
 
 namespace RoutePlanner.API.Controllers
 {
@@ -15,18 +18,55 @@ namespace RoutePlanner.API.Controllers
             _service = service;
         }
 
+        /// <summary>
+        /// Registra uma nova rota.
+        /// </summary>
+        /// <param name="request">Dados da rota a ser registrada.</param>
+        /// <returns>Mensagem de sucesso ou erro.</returns>
         [HttpPost("register")]
-        public IActionResult RegisterRoute([FromBody] TravelRoute route)
+        public async Task<IActionResult> RegisterRoute([FromBody] TravelRouteRequest request)
         {
-            _service.AddRoute(route);
-            return Ok("Route registered successfully!");
+            if (!ModelState.IsValid)
+            {
+                foreach (var key in ModelState.Keys)
+                {
+                    var errors = ModelState[key].Errors.Select(e => e.ErrorMessage);
+                    Console.WriteLine($"Validation Error in {key}: {string.Join(", ", errors)}");
+                }
+
+                return BadRequest(new
+                {
+                    Message = "Validation failed.",
+                    Errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList()
+                });
+            }
+
+            await _service.AddRouteAsync(new TravelRoute(request.Origin, request.Destination, request.Cost));
+
+            return Ok(new { Message = "Route registered successfully!" });
         }
 
+
+        /// <summary>
+        /// Obtém a melhor rota entre dois pontos.
+        /// </summary>
+        /// <param name="origin">Local de partida.</param>
+        /// <param name="destination">Local de chegada.</param>
+        /// <returns>Melhor rota e custo ou mensagem de erro.</returns>
         [HttpGet("best")]
-        public IActionResult GetBestRoute(string origin, string destination)
+        public async Task<IActionResult> GetBestRoute(string origin, string destination)
         {
-            var result = _service.GetBestRoute(origin, destination);
-            return Ok(new { Route = result.route, Cost = result.cost });
+            var response = await _service.GetBestRouteAsync(origin, destination);
+
+            if (response.Route == "No route available")
+            {
+                return NotFound(new { Message = response.Route });
+            }
+
+            return Ok(response);
         }
     }
 }

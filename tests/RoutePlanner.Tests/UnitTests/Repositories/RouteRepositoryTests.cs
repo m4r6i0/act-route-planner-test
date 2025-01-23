@@ -1,27 +1,26 @@
-using RoutePlanner.API.Models;
 using RoutePlanner.API.Repositories;
-using System.IO;
-using Xunit;
+using RoutePlanner.Domain.Entities;
+using RoutePlanner.Tests.Helpers;
+
 
 namespace RoutePlanner.Tests.UnitTests.Repositories
 {
     public class RouteRepositoryTests
     {
         [Fact]
-        public void AddRoute_ShouldPersistRouteInFile()
+        public async Task AddRoute_ShouldPersistRouteInDatabase()
         {
             // Arrange
-            var filePath = "test_routes.txt";
-            if (File.Exists(filePath)) File.Delete(filePath);
-
-            var repository = new RouteRepository(filePath);
+            using var context = InMemoryDbContextFactory.CreateDbContext();
+            context.Database.EnsureDeleted();
+            var repository = new RouteRepository(context);
             var route = new TravelRoute("GRU", "BRC", 10);
 
             // Act
-            repository.AddRoute(route);
+            await repository.AddAsync(route);
 
             // Assert
-            var routes = repository.GetAllRoutes();
+            var routes = await repository.GetAllAsync();
             Assert.Single(routes);
             Assert.Equal("GRU", routes[0].Origin);
             Assert.Equal("BRC", routes[0].Destination);
@@ -29,21 +28,23 @@ namespace RoutePlanner.Tests.UnitTests.Repositories
         }
 
         [Fact]
-        public void GetAllRoutes_ShouldReturnAllPersistedRoutes()
+        public async Task GetAllRoutes_ShouldReturnAllPersistedRoutes()
         {
             // Arrange
-            var filePath = "test_routes.txt";
-            if (File.Exists(filePath)) File.Delete(filePath);
+            using var context = InMemoryDbContextFactory.CreateDbContext();
+            context.Database.EnsureDeleted();
+            var repository = new RouteRepository(context);
 
-            var repository = new RouteRepository(filePath);
-            repository.AddRoute(new TravelRoute("GRU", "BRC", 10));
-            repository.AddRoute(new TravelRoute("BRC", "SCL", 5));
+            await repository.AddAsync(new TravelRoute("GRU", "BRC", 10));
+            await repository.AddAsync(new TravelRoute("BRC", "SCL", 5));
 
             // Act
-            var routes = repository.GetAllRoutes();
+            var routes = await repository.GetAllAsync();
 
             // Assert
             Assert.Equal(2, routes.Count);
+            Assert.Contains(routes, r => r.Origin == "GRU" && r.Destination == "BRC" && r.Cost == 10);
+            Assert.Contains(routes, r => r.Origin == "BRC" && r.Destination == "SCL" && r.Cost == 5);
         }
     }
 }
