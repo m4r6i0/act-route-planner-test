@@ -103,4 +103,4 @@ Foram implementados testes unitários e de integração utilizando boas prática
 
 ![Console App PrintScreen](img/screenshot_console_app.png)
 
-Para dúvidas ou suporte, entre em contato com o responsável pelo projeto.
+Para dúvidas ou suporte, entre em contato com o responsável pelo projeto pelo e-mail: marcio_costa@live.com.
