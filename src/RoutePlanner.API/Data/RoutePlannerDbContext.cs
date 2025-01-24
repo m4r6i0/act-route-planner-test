@@ -19,22 +19,22 @@ namespace RoutePlanner.API.Data
         {
         }
 
-        // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        // {
-        //     if (!optionsBuilder.IsConfigured)
-        //     {
-        //         var databaseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database");
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                var databaseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database");
 
-        //         if (!Directory.Exists(databaseDirectory))
-        //         {
-        //             Directory.CreateDirectory(databaseDirectory);
-        //         }
+                if (!Directory.Exists(databaseDirectory))
+                {
+                    Directory.CreateDirectory(databaseDirectory);
+                }
 
-        //         // Define o caminho do banco de dados na pasta Data
-        //         var databasePath = Path.Combine(databaseDirectory, "RoutePlanner.db");
-        //         optionsBuilder.UseSqlite($"Data Source={databasePath}");
-        //     }
-        // }
+                // Define o caminho do banco de dados na pasta Data
+                var databasePath = Path.Combine(databaseDirectory, "RoutePlanner.db");
+                optionsBuilder.UseSqlite($"Data Source={databasePath}");
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
