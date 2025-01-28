@@ -19,7 +19,7 @@ Este projeto implementa uma aplicação para calcular as melhores rotas entre do
    ```bash
    dotnet run
    ```
-3. A API estará disponível em `http://localhost:5102`.
+3. A API estará disponível em `http://localhost:5102/swagger`.
 
 ### Execução do Console
 1. Acesse o diretório do projeto Console:
